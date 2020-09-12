@@ -44,6 +44,9 @@ absentee <- read_csv("absentee_20201103.csv")
 
 ## Visualizations
 
+As you work on creating the plots, feel free to be creative with color choices
+and other aesthetics.
+
 Create a bar plot of the number of ballot received by ballot send date.
 
 See `images/visualizaiton_1.png`.
