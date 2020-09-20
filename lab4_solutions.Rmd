@@ -1,0 +1,113 @@
+---
+title: "Lab 4 Solutions"
+author: ""
+date: ""
+output: 
+  html_document:
+    toc: true
+    number_sections: false
+    toc_float: true
+    df_print: paged
+---
+
+```{r include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE,
+                      comment = "#>", highlight = TRUE,
+                      fig.align = "center")
+```
+
+## Packages
+
+```{r}
+library(tidyverse)
+```
+
+## NC absentee voting data
+
+>Voter information includes name, demographics, mailing address, precinct, and 
+district data. Ballot information for voting by mail includes request date, 
+send date, return date, return status (e.g., ACCEPTED, SPOILED, etc.), and 
+mailing address(es). Ballot information for one-stop early voting includes 
+voting date (called return date), early voting site, and same-day registration 
+information. For full list of variables included, see 
+[file layout](https://s3.amazonaws.com/dl.ncsbe.gov/ENRS/layout_absentee.txt).
+<br/><br/>
+*Source*: https://www.ncsbe.gov/results-data/absentee-data
+
+```{r get_data}
+base_url <- "https://s3.amazonaws.com/"
+zip_url <-str_c(base_url, "dl.ncsbe.gov/ENRS/2020_11_03/absentee_20201103.zip")
+download.file(url = zip_url, destfile = "absentee_votes.zip")
+unzip("absentee_votes.zip")
+absentee <- read_csv("absentee_20201103.csv")
+```
+
+## Visualizations
+
+Create a bar plot of the number of ballot received by ballot send date.
+
+See `images/visualizaiton_1.png`.
+
+```{r}
+absentee %>% 
+  count(ballot_send_dt) %>% 
+  ggplot(mapping = aes(x = ballot_send_dt, y = n)) +
+  geom_bar(stat = "identity") +
+  labs(x = "Ballot send date", y = "Count") +
+  theme_minimal()
+```
+
+Create a bar plot showing the number of ballots received on 09/04/2020 by 
+county. Only show the top 20 counties as determined by number of
+ballots received on 09/04/2020.
+
+See `images/visualizaiton_2.png`.
+
+```{r}
+absentee %>% 
+  filter(ballot_send_dt == "09/04/2020") %>% 
+  count(county_desc) %>% 
+  arrange(desc(n)) %>% 
+  slice(1:20) %>% 
+  ggplot(aes(x = reorder(county_desc, n), y = n)) +
+  geom_bar(stat = "identity") +
+  labs(x = "County", y = "Count") +
+  coord_flip() +
+  theme_minimal()
+```
+
+Create a histogram based on the proportion of accepted ballots on a per
+county basis.
+
+See `images/visualizaiton_3.png`.
+
+```{r}
+absentee %>% 
+  group_by(county_desc) %>% 
+  count(ballot_rtn_status) %>% 
+  mutate(proportion = n / sum(n)) %>% 
+  ungroup() %>% 
+  filter(ballot_rtn_status == "ACCEPTED") %>% 
+  ggplot(aes(x = proportion)) +
+  geom_histogram(binwidth = 0.02) +
+  labs(x = "Proportion of ballots accepted", y = "Count") +
+  theme_minimal(base_size = 16)
+```
+
+Create comparison box plots based on the age of absentee/mail-in voters
+from the parties "DEM", "REP", "UNA" broken down by race.
+
+See `images/visualizaiton_4.png`.
+
+```{r}
+absentee %>% 
+  filter(voter_party_code %in% c("DEM", "REP", "UNA")) %>% 
+  ggplot(aes(x = voter_party_code, y = age, fill = race)) +
+  geom_boxplot() +
+  scale_x_discrete(labels = c("Democrat", "Republican", "Unafilliated")) +
+  theme_minimal() +
+  theme(legend.position = "bottom") +
+  labs(x = "Voter party", y = "Age", fill = "")
+```
+
+
